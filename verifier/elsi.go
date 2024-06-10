@@ -15,7 +15,7 @@ type JAdESValidator interface {
 }
 
 type ElsiValidationService struct {
-	validator JAdESValidator
+	jAdESValidator JAdESValidator
 }
 
 func (vs *ElsiValidationService) ValidateVC(
@@ -23,20 +23,20 @@ func (vs *ElsiValidationService) ValidateVC(
 	logging.Log().Debugf("Validating credential %s with JAdES certificate",
 		logging.PrettyPrintObject(verifiableCredential))
 
-	jadesContext := validationContext.(JAdESValidationContext)
-	isValid, err := vs.validator.ValidateCertificate(jadesContext.GetCertificate(), jadesContext.GetChain())
+	jAdESValidationContext := validationContext.(JAdESValidationContext)
+	isValid, err := vs.jAdESValidator.ValidateCertificate(jAdESValidationContext.GetCertificate(), jAdESValidationContext.GetChain())
 	if !isValid || err != nil {
 		logging.Log().Warnf("eIDAS certificate is invalid. Err: %v", err)
 		return false, err
 	}
 
-	isValid, err = vs.validator.ValidateSignature(jadesContext.GetSignature())
+	isValid, err = vs.jAdESValidator.ValidateSignature(jAdESValidationContext.GetSignature())
 	if !isValid || err != nil {
 		logging.Log().Warnf("JAdES signature is invalid. Err: %v", err)
 		return false, err
 	}
 
-	return validateControlOfDID(jadesContext.GetCertificate(), verifiableCredential.Contents().Issuer.ID)
+	return validateControlOfDID(jAdESValidationContext.GetCertificate(), verifiableCredential.Contents().Issuer.ID)
 }
 
 func validateControlOfDID(certificate *x509.Certificate, did string) (bool, error) {

@@ -82,7 +82,7 @@ func TestJadesValidationService_ValidateVC(t *testing.T) {
 	}
 
 	externalValidator := &mockExternalValidator{}
-	validationService := &ElsiValidationService{validator: externalValidator}
+	validationService := &ElsiValidationService{jAdESValidator: externalValidator}
 
 	for _, tc := range testCases {
 		t.Run(tc.testName, func(t *testing.T) {

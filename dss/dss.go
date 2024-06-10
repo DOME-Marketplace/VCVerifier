@@ -78,11 +78,11 @@ func encodeCertToBase64(cert *x509.Certificate) string {
 var ErrorDSSNoResponse = errors.New("no_response_from_dss")
 var httpClient = client.HttpClient()
 
-func InitDSSValidator(configuration *config.Configuration) (*ExternalJAdESValidator, error) {
-	jadesConfig := configuration.JAdES
+func InitDSSJAdESValidator(configuration *config.Configuration) (*ExternalJAdESValidator, error) {
+	jAdESConfig := configuration.JAdES
 	validator := &ExternalJAdESValidator{
-		certificateValidationUrl: jadesConfig.CertificateValidationAddress,
-		signatureValidationUrl:   jadesConfig.SignatureValidationAddress,
+		certificateValidationUrl: jAdESConfig.CertificateValidationAddress,
+		signatureValidationUrl:   jAdESConfig.SignatureValidationAddress,
 	}
 	return validator, nil
 }

@@ -264,12 +264,12 @@ func InitVerifier(config *configModel.Configuration) (err error) {
 	}
 	logging.Log().Warnf("Initiated key %s.", logging.PrettyPrintObject(key))
 
-	dssValidator, err := dss.InitDSSValidator(config)
+	dssJAdESValidator, err := dss.InitDSSJAdESValidator(config)
 	if err != nil {
 		logging.Log().Errorf("Was not able to instantiate the dss validator. Err: %v", err)
 		return err
 	}
-	elsiValidationService := ElsiValidationService{dssValidator}
+	elsiValidationService := ElsiValidationService{dssJAdESValidator}
 
 	verifier = &CredentialVerifier{
 		(&config.Server).Host,
