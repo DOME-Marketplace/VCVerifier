@@ -4,9 +4,11 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
+	"crypto/x509"
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"github.com/fiware/VCVerifier/dss"
 	"io"
 	"net/http"
 	"net/url"
@@ -121,6 +123,24 @@ func (trvc TrustRegistriesValidationContext) GetRequiredCredentialTypes() []stri
 		requiredTypes = append(requiredTypes, credentialType)
 	}
 	return removeDuplicate(requiredTypes)
+}
+
+type JAdESValidationContext struct {
+	certificate *x509.Certificate
+	chain       []*x509.Certificate
+	signature   string
+}
+
+func (jvc JAdESValidationContext) GetCertificate() *x509.Certificate {
+	return jvc.certificate
+}
+
+func (jvc JAdESValidationContext) GetChain() []*x509.Certificate {
+	return jvc.chain
+}
+
+func (jvc JAdESValidationContext) GetSignature() string {
+	return jvc.signature
 }
 
 func removeDuplicate[T string | int](sliceList []T) []T {
@@ -239,6 +259,14 @@ func InitVerifier(config *configModel.Configuration) (err error) {
 		return err
 	}
 	logging.Log().Warnf("Initiated key %s.", logging.PrettyPrintObject(key))
+
+	dssValidator, err := dss.InitDSSValidator(config)
+	if err != nil {
+		logging.Log().Errorf("Was not able to instantiate the dss validator. Err: %v", err)
+		return err
+	}
+	elsiValidationService := ElsiValidationService{dssValidator}
+
 	verifier = &CredentialVerifier{
 		(&config.Server).Host,
 		verifierConfig.Did,
@@ -255,6 +283,7 @@ func InitVerifier(config *configModel.Configuration) (err error) {
 			&externalGaiaXValidator,
 			&trustedParticipantVerificationService,
 			&trustedIssuerVerificationService,
+			&elsiValidationService,
 		},
 	}
 
