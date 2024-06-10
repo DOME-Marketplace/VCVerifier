@@ -8,7 +8,6 @@ import (
 	"errors"
 	"github.com/fiware/VCVerifier/config"
 	"github.com/fiware/VCVerifier/logging"
-	"github.com/fiware/VCVerifier/verifier"
 	"strings"
 
 	"net/http"
@@ -79,7 +78,7 @@ func encodeCertToBase64(cert *x509.Certificate) string {
 var ErrorDSSNoResponse = errors.New("no_response_from_dss")
 var httpClient = client.HttpClient()
 
-func InitDSSValidator(configuration *config.Configuration) (verifier.JAdESValidator, error) {
+func InitDSSValidator(configuration *config.Configuration) (*ExternalJAdESValidator, error) {
 	jadesConfig := configuration.JAdES
 	validator := &ExternalJAdESValidator{
 		certificateValidationUrl: jadesConfig.CertificateValidationAddress,
