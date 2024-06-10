@@ -66,6 +66,10 @@ type Verifier struct {
 	Did string `mapstructure:"did"`
 	// address of the (ebsi-compatible) trusted-issuers-registry for verifying the issuer
 	TirAddress string `mapstructure:"tirAddress"`
+	// expiry of the tir-cache entries
+	TirCacheExpiry int `mapstructure:"tirCacheExpiry" default:"30"`
+	// expiry of the til-cache entries
+	TilCacheExpiry int `mapstructure:"tilCacheExpiry" default:"30"`
 	// expiry of auth sessions
 	SessionExpiry int `mapstructure:"sessionExpiry" default:"30"`
 	// policies that shall be checked
@@ -78,6 +82,8 @@ type Verifier struct {
 	// * `baseContext`: validates that only the fields and values (when applicable)are present in the document. No extra fields are allowed (outside of credentialSubject).
 	// Default is set to `none` to ensure backwards compatibility
 	ValidationMode string `mapstructure:"validationMode" default:"none"`
+	// algorithm to be used for the jwt signatures - currently supported: RS256 and ES256
+	KeyAlgorithm string `mapstructure:"keyAlgorithm" default:"RS256"`
 }
 
 type Policies struct {

@@ -27,9 +27,11 @@ func Test_ReadConfig(t *testing.T) {
 					StaticDir:   "views/static",
 				},
 				Verifier: Verifier{
-					Did:           "did:key:somekey",
-					TirAddress:    "https://test.dev/trusted_issuer/v3/issuers/",
-					SessionExpiry: 30,
+					Did:            "did:key:somekey",
+					TirAddress:     "https://test.dev/trusted_issuer/v3/issuers/",
+					TirCacheExpiry: 30,
+					TilCacheExpiry: 30,
+					SessionExpiry:  30,
 					PolicyConfig: Policies{
 						DefaultPolicies: PolicyMap{
 							"SignaturePolicy": {},
@@ -44,6 +46,7 @@ func Test_ReadConfig(t *testing.T) {
 						},
 					},
 					ValidationMode: "none",
+					KeyAlgorithm:   "RS256",
 				},
 				Logging: Logging{
 					Level:       "DEBUG",
@@ -83,8 +86,11 @@ func Test_ReadConfig(t *testing.T) {
 				},
 				Verifier: Verifier{Did: "",
 					TirAddress:     "",
+					TirCacheExpiry: 30,
+					TilCacheExpiry: 30,
 					SessionExpiry:  30,
 					ValidationMode: "none",
+					KeyAlgorithm:   "RS256",
 				},
 				Logging: Logging{
 					Level:       "INFO",
