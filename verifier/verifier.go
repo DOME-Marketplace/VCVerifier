@@ -5,7 +5,6 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/rsa"
-	"crypto/x509"
 	"encoding/base64"
 	"errors"
 	"fmt"
@@ -98,6 +97,8 @@ type CredentialVerifier struct {
 // allow singleton access to the verifier
 var verifier Verifier
 
+var jAdESValidator JAdESValidator
+
 // http client to be used
 var httpClient = client.HttpClient()
 
@@ -127,24 +128,6 @@ func (trvc TrustRegistriesValidationContext) GetRequiredCredentialTypes() []stri
 		requiredTypes = append(requiredTypes, credentialType)
 	}
 	return removeDuplicate(requiredTypes)
-}
-
-type JAdESValidationContext struct {
-	certificate *x509.Certificate
-	chain       []*x509.Certificate
-	signature   string
-}
-
-func (jvc JAdESValidationContext) GetCertificate() *x509.Certificate {
-	return jvc.certificate
-}
-
-func (jvc JAdESValidationContext) GetChain() []*x509.Certificate {
-	return jvc.chain
-}
-
-func (jvc JAdESValidationContext) GetSignature() string {
-	return jvc.signature
 }
 
 func removeDuplicate[T string | int](sliceList []T) []T {
@@ -211,6 +194,13 @@ func GetVerifier() Verifier {
 	return verifier
 }
 
+func GetJAdESValidator() JAdESValidator {
+	if jAdESValidator == nil {
+		logging.Log().Error("JAdES validator is not initialized.")
+	}
+	return jAdESValidator
+}
+
 /**
 * Initialize the verifier and all its components from the configuration
 **/
@@ -264,12 +254,11 @@ func InitVerifier(config *configModel.Configuration) (err error) {
 	}
 	logging.Log().Warnf("Initiated key %s.", logging.PrettyPrintObject(key))
 
-	dssJAdESValidator, err := dss.InitDSSJAdESValidator(config)
+	jAdESValidator, err = dss.InitDSSJAdESValidator(config)
 	if err != nil {
 		logging.Log().Errorf("Was not able to instantiate the dss validator. Err: %v", err)
 		return err
 	}
-	elsiValidationService := ElsiValidationService{dssJAdESValidator}
 
 	verifier = &CredentialVerifier{
 		(&config.Server).Host,
@@ -287,7 +276,6 @@ func InitVerifier(config *configModel.Configuration) (err error) {
 			&externalGaiaXValidator,
 			&trustedParticipantVerificationService,
 			&trustedIssuerVerificationService,
-			&elsiValidationService,
 		},
 		verifierConfig.KeyAlgorithm,
 	}

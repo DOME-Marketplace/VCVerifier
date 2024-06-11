@@ -27,7 +27,8 @@ import (
 
 var apiVerifier verifier.Verifier
 var presentationOptions = []verifiable.PresentationOpt{
-	verifiable.WithPresProofChecker(defaults.NewDefaultProofChecker(verifier.JWTVerfificationMethodResolver{})),
+	verifiable.WithPresProofChecker(verifier.NewJAdESJWTProofChecker(
+		defaults.NewDefaultProofChecker(verifier.JWTVerfificationMethodResolver{}), verifier.GetJAdESValidator())),
 	verifiable.WithPresJSONLDDocumentLoader(ld.NewDefaultDocumentLoader(http.DefaultClient))}
 
 var ErrorMessagNoGrantType = ErrorMessage{"no_grant_type_provided", "Token requests require a grant_type."}
