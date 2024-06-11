@@ -40,6 +40,5 @@ configRepo:
               - https://til-pdc.gaia-x.fiware.dev
 
 jades:
-  certificateValidationAddress: http://jades-validator/services/rest/certificate-validation/validateCertificate
   signatureValidationAddress: http://jades-validator/services/rest/validation/validateSignature
 

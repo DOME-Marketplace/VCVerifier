@@ -44,8 +44,7 @@ type M2M struct {
 
 // configuration for eIDAS certificate and JAdES signature validation
 type JAdES struct {
-	CertificateValidationAddress string `mapstructure:"certificateValidationAddress"`
-	SignatureValidationAddress   string `mapstructure:"signatureValidationAddress"`
+	SignatureValidationAddress string `mapstructure:"signatureValidationAddress"`
 }
 
 // logging config

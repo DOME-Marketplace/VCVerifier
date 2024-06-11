@@ -15,10 +15,13 @@ import (
 	"github.com/trustbloc/vc-go/verifiable"
 )
 
-var ErrorNoKidHeader = errors.New("no_kid_header")
+const DidElsiPrefix = "did:elsi:"
+const DidPartsSeparator = ":"
+
 var ErrorEmptyCertChain = errors.New("empty_certificate_chain")
 var ErrorPemDecodeFailed = errors.New("pem_decode_failed")
 var ErrorNoCertChain = errors.New("no_cert_chain")
+var ErrorDidValidationFailed = errors.New("did_validation_failed")
 
 type JAdESValidator interface {
 	ValidateSignature(payload, signature []byte) (bool, error)
@@ -35,12 +38,7 @@ type JAdESJWTProofChecker struct {
 }
 
 func (jpc JAdESJWTProofChecker) CheckJWTProof(headers jose.Headers, expectedProofIssuer string, msg, signature []byte) error {
-	kid, exists := headers.KeyID()
-	if !exists {
-		return ErrorNoKidHeader
-	}
-	method := strings.Split(kid, ":")[1]
-	if method == "elsi" {
+	if isDidElsiMethod(expectedProofIssuer) {
 		return jpc.checkElsiProof(headers, expectedProofIssuer, msg, signature)
 	} else {
 		return jpc.defaultChecker.CheckJWTProof(headers, expectedProofIssuer, msg, signature)
@@ -67,6 +65,9 @@ func (jpc JAdESJWTProofChecker) checkElsiProof(headers jose.Headers, expectedPro
 	}
 
 	certificate, err := retrieveCertificate(headers)
+	if certificate == nil || err != nil {
+		return err
+	}
 
 	return validateControlOfDID(certificate, expectedProofIssuer)
 }
@@ -99,9 +100,14 @@ func parseCertificate(certBase64 string) (*x509.Certificate, error) {
 	return cert, nil
 }
 
+func isDidElsiMethod(did string) bool {
+	parts := strings.Split(did, DidPartsSeparator)
+	return len(parts) == 3 && strings.HasPrefix(did, DidElsiPrefix)
+}
+
 func validateControlOfDID(certificate *x509.Certificate, issuerDid string) error {
 	var oidOrganizationIdentifier = asn1.ObjectIdentifier{2, 5, 4, 97}
-	var organizationIdentifier string
+	organizationIdentifier := ""
 
 	for _, name := range certificate.Subject.Names {
 		if name.Type.Equal(oidOrganizationIdentifier) {
@@ -110,14 +116,9 @@ func validateControlOfDID(certificate *x509.Certificate, issuerDid string) error
 		}
 	}
 
-	parts := strings.Split(issuerDid, ":")
-	if len(parts) != 3 {
-		return errors.New("invalid did")
-	}
-
-	if parts[0] == "did" && parts[1] == "elsi" && parts[2] == organizationIdentifier {
+	if organizationIdentifier != "" && strings.HasSuffix(issuerDid, DidPartsSeparator+organizationIdentifier) {
 		return nil
 	} else {
-		return errors.New("did validation failed")
+		return ErrorDidValidationFailed
 	}
 }
