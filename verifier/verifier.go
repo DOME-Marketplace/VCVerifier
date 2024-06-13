@@ -8,7 +8,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"github.com/fiware/VCVerifier/dss"
 	"io"
 	"net/http"
 	"net/url"
@@ -19,6 +18,7 @@ import (
 
 	common "github.com/fiware/VCVerifier/common"
 	configModel "github.com/fiware/VCVerifier/config"
+	"github.com/fiware/VCVerifier/dss"
 	"github.com/fiware/VCVerifier/tir"
 	"github.com/trustbloc/vc-go/verifiable"
 

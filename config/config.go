@@ -42,7 +42,7 @@ type M2M struct {
 	KeyType string `mapstructure:"keyType" default:"RSAPS256"`
 }
 
-// configuration for eIDAS certificate and JAdES signature validation
+// configuration for JAdES signature validation
 type JAdES struct {
 	SignatureValidationAddress string `mapstructure:"signatureValidationAddress"`
 }
