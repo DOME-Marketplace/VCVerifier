@@ -24,7 +24,7 @@ var ErrorNoCertChain = errors.New("no_cert_chain")
 var ErrorDidValidationFailed = errors.New("did_validation_failed")
 
 type JAdESValidator interface {
-	ValidateSignature(payload, signature []byte) (bool, error)
+	ValidateSignature(signature string) (bool, error)
 }
 
 func NewJAdESJWTProofChecker(
@@ -58,7 +58,17 @@ func (jpc JAdESJWTProofChecker) GetLDPDigest(proof *proof.Proof, doc []byte) ([]
 }
 
 func (jpc JAdESJWTProofChecker) checkElsiProof(headers jose.Headers, expectedProofIssuer string, msg, signature []byte) error {
-	isValid, err := jpc.jAdESValidator.ValidateSignature(msg, signature)
+	decodedMsg, err := decodeBase64BytesToString(msg)
+	if err != nil {
+		logging.Log().Warnf("Error decoding msg: %v", err)
+		return err
+	}
+
+	jwt := decodedMsg + "." + base64.RawURLEncoding.EncodeToString(signature)
+	logging.Log().Infof("JWT: %s", jwt)
+
+	base64Jwt := base64.RawURLEncoding.EncodeToString([]byte(jwt))
+	isValid, err := jpc.jAdESValidator.ValidateSignature(base64Jwt)
 	if !isValid || err != nil {
 		logging.Log().Warnf("JAdES signature is invalid. Err: %v", err)
 		return err
@@ -72,16 +82,27 @@ func (jpc JAdESJWTProofChecker) checkElsiProof(headers jose.Headers, expectedPro
 	return validateControlOfDID(certificate, expectedProofIssuer)
 }
 
+func decodeBase64BytesToString(base64Bytes []byte) (string, error) {
+	base64Str := base64.RawURLEncoding.EncodeToString(base64Bytes)
+	decodedBytes, err := base64.StdEncoding.DecodeString(base64Str)
+	if err != nil {
+		return "", err
+	}
+
+	return string(decodedBytes[:]), nil
+}
+
 func retrieveCertificate(headers jose.Headers) (*x509.Certificate, error) {
 	raw, ok := headers[jose.HeaderX509CertificateChain]
 	if !ok {
 		return nil, ErrorNoCertChain
 	}
 
-	chain, ok := raw.([]string)
+	rawArray := raw.([]interface{})
 
-	if len(chain) != 0 {
-		return parseCertificate(chain[0])
+	if len(rawArray) != 0 {
+		cert := rawArray[0].(string)
+		return parseCertificate(cert)
 	} else {
 		return nil, ErrorEmptyCertChain
 	}
