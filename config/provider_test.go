@@ -73,7 +73,8 @@ func Test_ReadConfig(t *testing.T) {
 					},
 					UpdateInterval: 30,
 				},
-				M2M: M2M{AuthEnabled: false, VerificationMethod: "JsonWebKey2020", SignatureType: "JsonWebSignature2020", KeyType: "RSAPS256"},
+				M2M:   M2M{AuthEnabled: false, VerificationMethod: "JsonWebKey2020", SignatureType: "JsonWebSignature2020", KeyType: "RSAPS256"},
+				JAdES: JAdES{SignatureValidationAddress: "http://jades-validator/services/rest/validation/validateSignature"},
 			},
 			false,
 		}, {
