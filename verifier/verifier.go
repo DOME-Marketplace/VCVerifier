@@ -18,6 +18,7 @@ import (
 
 	common "github.com/fiware/VCVerifier/common"
 	configModel "github.com/fiware/VCVerifier/config"
+	"github.com/fiware/VCVerifier/dss"
 	"github.com/fiware/VCVerifier/tir"
 	"github.com/trustbloc/vc-go/verifiable"
 
@@ -95,6 +96,8 @@ type CredentialVerifier struct {
 
 // allow singleton access to the verifier
 var verifier Verifier
+
+var jAdESValidator JAdESValidator
 
 // http client to be used
 var httpClient = client.HttpClient()
@@ -191,6 +194,13 @@ func GetVerifier() Verifier {
 	return verifier
 }
 
+func GetJAdESValidator() JAdESValidator {
+	if jAdESValidator == nil {
+		logging.Log().Error("JAdES validator is not initialized.")
+	}
+	return jAdESValidator
+}
+
 /**
 * Initialize the verifier and all its components from the configuration
 **/
@@ -243,6 +253,13 @@ func InitVerifier(config *configModel.Configuration) (err error) {
 		return err
 	}
 	logging.Log().Warnf("Initiated key %s.", logging.PrettyPrintObject(key))
+
+	jAdESValidator, err = dss.InitDSSJAdESValidator(config)
+	if err != nil {
+		logging.Log().Errorf("Was not able to instantiate the dss validator. Err: %v", err)
+		return err
+	}
+
 	verifier = &CredentialVerifier{
 		(&config.Server).Host,
 		verifierConfig.Did,

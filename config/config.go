@@ -9,6 +9,7 @@ type Configuration struct {
 	Logging    Logging    `mapstructure:"logging"`
 	ConfigRepo ConfigRepo `mapstructure:"configRepo"`
 	M2M        M2M        `mapstructure:"m2m"`
+	JAdES      JAdES      `mapstructure:"jades"`
 }
 
 // general configuration to run the application
@@ -39,6 +40,11 @@ type M2M struct {
 	SignatureType string `mapstructure:"signatureType" default:"JsonWebSignature2020"`
 	// type of the provided key
 	KeyType string `mapstructure:"keyType" default:"RSAPS256"`
+}
+
+// configuration for JAdES signature validation
+type JAdES struct {
+	SignatureValidationAddress string `mapstructure:"signatureValidationAddress"`
 }
 
 // logging config
