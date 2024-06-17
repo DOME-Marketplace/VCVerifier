@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -93,11 +93,11 @@ func TestGetToken(t *testing.T) {
 	for _, tc := range tests {
 
 		t.Run(tc.testName, func(t *testing.T) {
-			presentationOptions = []verifiable.PresentationOpt{verifiable.WithPresDisabledProofCheck(), verifiable.WithDisabledJSONLDChecks()}
-
 			recorder := httptest.NewRecorder()
 			testContext, _ := gin.CreateTestContext(recorder)
+
 			apiVerifier = &mockVerifier{mockJWTString: tc.mockJWTString, mockExpiration: tc.mockExpiration, mockError: tc.mockError}
+			presentationOptions = []verifiable.PresentationOpt{verifiable.WithPresDisabledProofCheck(), verifiable.WithDisabledJSONLDChecks()}
 
 			formArray := []string{}
 
@@ -131,7 +131,7 @@ func TestGetToken(t *testing.T) {
 			}
 
 			if tc.expectedStatusCode == 400 {
-				errorBody, _ := ioutil.ReadAll(recorder.Body)
+				errorBody, _ := io.ReadAll(recorder.Body)
 				errorMessage := ErrorMessage{}
 				json.Unmarshal(errorBody, &errorMessage)
 				if errorMessage != tc.expectedError {
@@ -143,7 +143,7 @@ func TestGetToken(t *testing.T) {
 
 			tokenResponse := TokenResponse{}
 			if tc.expectedResponse != tokenResponse {
-				body, _ := ioutil.ReadAll(recorder.Body)
+				body, _ := io.ReadAll(recorder.Body)
 				err := json.Unmarshal(body, &tokenResponse)
 				if err != nil {
 					t.Errorf("%s - Was not able to unmarshal the token response. Err: %v.", tc.testName, err)
@@ -275,7 +275,7 @@ func TestVerifierAPIAuthenticationResponse(t *testing.T) {
 			VerifierAPIAuthenticationResponse(testContext)
 
 			if tc.expectedStatusCode == 400 {
-				errorBody, _ := ioutil.ReadAll(recorder.Body)
+				errorBody, _ := io.ReadAll(recorder.Body)
 				errorMessage := ErrorMessage{}
 				json.Unmarshal(errorBody, &errorMessage)
 				if errorMessage != tc.expectedError {
@@ -365,7 +365,7 @@ func TestVerifierAPIStartSIOP(t *testing.T) {
 			}
 
 			if tc.expectedStatusCode == 400 {
-				errorBody, _ := ioutil.ReadAll(recorder.Body)
+				errorBody, _ := io.ReadAll(recorder.Body)
 				errorMessage := ErrorMessage{}
 				json.Unmarshal(errorBody, &errorMessage)
 				if errorMessage != tc.expectedError {
@@ -374,7 +374,7 @@ func TestVerifierAPIStartSIOP(t *testing.T) {
 				}
 				return
 			}
-			body, _ := ioutil.ReadAll(recorder.Body)
+			body, _ := io.ReadAll(recorder.Body)
 			connectionString := string(body)
 			if connectionString != tc.expectedConnectionString {
 				t.Errorf("%s - Expected connectionString %s but was %s.", tc.testName, tc.expectedConnectionString, connectionString)

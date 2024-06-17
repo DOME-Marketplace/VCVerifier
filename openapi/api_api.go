@@ -16,6 +16,7 @@ import (
 	"strings"
 
 	"github.com/fiware/VCVerifier/common"
+	"github.com/fiware/VCVerifier/config"
 	"github.com/fiware/VCVerifier/logging"
 	"github.com/fiware/VCVerifier/verifier"
 	"github.com/piprate/json-gold/ld"
@@ -25,9 +26,8 @@ import (
 )
 
 var apiVerifier verifier.Verifier
-var presentationOptions = []verifiable.PresentationOpt{
-	verifiable.WithPresProofChecker(verifier.NewDomeJWTProofChecker(verifier.GetConfiguration().Verifier.CertificateFingerprint)),
-	verifiable.WithPresJSONLDDocumentLoader(ld.NewDefaultDocumentLoader(http.DefaultClient))}
+var configuration *config.Configuration
+var presentationOptions []verifiable.PresentationOpt
 
 var ErrorMessagNoGrantType = ErrorMessage{"no_grant_type_provided", "Token requests require a grant_type."}
 var ErrorMessageUnsupportedGrantType = ErrorMessage{"unsupported_grant_type", "Provided grant_type is not supported by the implementation."}
@@ -47,6 +47,13 @@ func getApiVerifier() verifier.Verifier {
 		apiVerifier = verifier.GetVerifier()
 	}
 	return apiVerifier
+}
+
+func getConfiguration() *config.Configuration {
+	if configuration == nil {
+		configuration = verifier.GetConfiguration()
+	}
+	return configuration
 }
 
 // GetToken - Token endpoint to exchange the authorization code with the actual JWT.
@@ -237,7 +244,7 @@ func extractVpFromToken(c *gin.Context, vpToken string) (parsedPresentation *ver
 
 	// takes care of the verification
 	parsedPresentation, err = verifiable.ParsePresentation(tokenBytes,
-		presentationOptions...)
+		getPresentationOpts()...)
 	if err != nil {
 		logging.Log().Infof("Was not able to parse the token %s. Err: %v", vpToken, err)
 		c.AbortWithStatusJSON(400, ErrorMessageUnableToDecodeToken)
@@ -308,4 +315,21 @@ func VerifierAPIStartSIOP(c *gin.Context) {
 		return
 	}
 	c.String(http.StatusOK, connectionString)
+}
+
+func getPresentationOpts() []verifiable.PresentationOpt {
+	if len(presentationOptions) > 0 {
+		return presentationOptions
+	}
+
+	fingerprint := ""
+	if getConfiguration() == nil {
+		logging.Log().Warn("No configuration available.")
+	} else {
+		fingerprint = getConfiguration().Verifier.CertificateFingerprint
+	}
+
+	return []verifiable.PresentationOpt{
+		verifiable.WithPresProofChecker(verifier.NewDomeJWTProofChecker(fingerprint)),
+		verifiable.WithPresJSONLDDocumentLoader(ld.NewDefaultDocumentLoader(http.DefaultClient))}
 }
