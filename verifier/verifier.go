@@ -96,6 +96,8 @@ type CredentialVerifier struct {
 // allow singleton access to the verifier
 var verifier Verifier
 
+var configuration *configModel.Configuration
+
 // http client to be used
 var httpClient = client.HttpClient()
 
@@ -192,6 +194,16 @@ func GetVerifier() Verifier {
 }
 
 /**
+* Global singelton access to the config
+**/
+func GetConfiguration() *configModel.Configuration {
+	if configuration == nil {
+		logging.Log().Error("No configuration is initialized.")
+	}
+	return configuration
+}
+
+/**
 * Initialize the verifier and all its components from the configuration
 **/
 func InitVerifier(config *configModel.Configuration) (err error) {
@@ -200,6 +212,8 @@ func InitVerifier(config *configModel.Configuration) (err error) {
 	if err != nil {
 		return
 	}
+	configuration = config
+
 	verifierConfig := &config.Verifier
 
 	sessionCache := cache.New(time.Duration(verifierConfig.SessionExpiry)*time.Second, time.Duration(2*verifierConfig.SessionExpiry)*time.Second)
@@ -368,6 +382,11 @@ func (v *CredentialVerifier) GenerateToken(clientId, subject, audience string, s
 	credentialsByType := map[string][]*verifiable.Credential{}
 	credentialTypes := []string{}
 	for _, vc := range verifiablePresentation.Credentials() {
+		// verify the credential
+		verificationError := vc.CheckProof()
+		if verificationError != nil {
+			return 0, "", verificationError
+		}
 		for _, credentialType := range vc.Contents().Types {
 			if _, ok := credentialsByType[credentialType]; !ok {
 				credentialsByType[credentialType] = []*verifiable.Credential{}
