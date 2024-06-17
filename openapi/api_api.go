@@ -29,6 +29,7 @@ var apiVerifier verifier.Verifier
 var configuration *config.Configuration
 var presentationOptions []verifiable.PresentationOpt
 
+
 var ErrorMessagNoGrantType = ErrorMessage{"no_grant_type_provided", "Token requests require a grant_type."}
 var ErrorMessageUnsupportedGrantType = ErrorMessage{"unsupported_grant_type", "Provided grant_type is not supported by the implementation."}
 var ErrorMessageNoCode = ErrorMessage{"no_code_provided", "Token requests require a code."}
@@ -70,13 +71,33 @@ func GetToken(c *gin.Context) {
 	if grantType == common.TYPE_CODE {
 		handleTokenTypeCode(c)
 	} else if grantType == common.TYPE_VP_TOKEN {
-		handleTokenTypeVPToken(c)
+		handleTokenTypeVPToken(c, c.GetHeader("client_id"))
 	} else {
 		c.AbortWithStatusJSON(400, ErrorMessageUnsupportedGrantType)
 	}
 }
 
-func handleTokenTypeVPToken(c *gin.Context) {
+// GetToken - Token endpoint to exchange the authorization code with the actual JWT.
+func GetTokenForService(c *gin.Context) {
+
+	logging.Log().Debugf("%v", c.Request)
+	grantType, grantTypeExists := c.GetPostForm("grant_type")
+	if !grantTypeExists {
+		logging.Log().Debug("No grant_type present in the request.")
+		c.AbortWithStatusJSON(400, ErrorMessagNoGrantType)
+		return
+	}
+
+	if grantType == common.TYPE_CODE {
+		handleTokenTypeCode(c)
+	} else if grantType == common.TYPE_VP_TOKEN {
+		handleTokenTypeVPToken(c, c.Param("service_id"))
+	} else {
+		c.AbortWithStatusJSON(400, ErrorMessageUnsupportedGrantType)
+	}
+}
+
+func handleTokenTypeVPToken(c *gin.Context, clientId string) {
 	var requestBody TokenRequestBody
 
 	vpToken, vpTokenExists := c.GetPostForm("vp_token")
@@ -108,7 +129,6 @@ func handleTokenTypeVPToken(c *gin.Context) {
 		logging.Log().Warnf("Was not able to extract the credentials from the vp_token.")
 		return
 	}
-	clientId := c.GetHeader("client_id")
 
 	scopes := strings.Split(scope, ",")
 
@@ -277,7 +297,7 @@ func VerifierAPIJWKS(c *gin.Context) {
 // VerifierAPIOpenID
 func VerifierAPIOpenIDConfiguration(c *gin.Context) {
 
-	metadata, err := getApiVerifier().GetOpenIDConfiguration(c.Param("serviceIdentifier"))
+	metadata, err := getApiVerifier().GetOpenIDConfiguration(c.Param("service_id"))
 	if err != nil {
 		c.AbortWithStatusJSON(500, ErrorMessage{err.Error(), "Was not able to generate the OpenID metadata."})
 		return
