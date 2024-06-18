@@ -77,6 +77,8 @@ type Verifier struct {
 	ValidationMode string `mapstructure:"validationMode" default:"none"`
 	// algorithm to be used for the jwt signatures - currently supported: RS256 and ES256
 	KeyAlgorithm string `mapstructure:"keyAlgorithm" default:"RS256"`
+	// sha256 fingerprint of the certificate to sign DOME credentials with
+	CertificateFingerprint string `mapstructure:"certificateFingerprint"`
 }
 
 type Policies struct {

@@ -16,19 +16,19 @@ import (
 	"strings"
 
 	"github.com/fiware/VCVerifier/common"
+	"github.com/fiware/VCVerifier/config"
 	"github.com/fiware/VCVerifier/logging"
 	"github.com/fiware/VCVerifier/verifier"
 	"github.com/piprate/json-gold/ld"
-	"github.com/trustbloc/vc-go/proof/defaults"
 	"github.com/trustbloc/vc-go/verifiable"
 
 	"github.com/gin-gonic/gin"
 )
 
 var apiVerifier verifier.Verifier
-var presentationOptions = []verifiable.PresentationOpt{
-	verifiable.WithPresProofChecker(defaults.NewDefaultProofChecker(verifier.JWTVerfificationMethodResolver{})),
-	verifiable.WithPresJSONLDDocumentLoader(NewCachingDocumentLoader(ld.NewDefaultDocumentLoader(http.DefaultClient)))}
+var configuration *config.Configuration
+var presentationOptions []verifiable.PresentationOpt
+
 
 var ErrorMessagNoGrantType = ErrorMessage{"no_grant_type_provided", "Token requests require a grant_type."}
 var ErrorMessageUnsupportedGrantType = ErrorMessage{"unsupported_grant_type", "Provided grant_type is not supported by the implementation."}
@@ -38,7 +38,7 @@ var ErrorMessageNoState = ErrorMessage{"no_state_provided", "Authentication requ
 var ErrorMessageNoScope = ErrorMessage{"no_scope_provided", "Authentication requires a scope provided as a form parameter."}
 var ErrorMessageNoToken = ErrorMessage{"no_token_provided", "Authentication requires a token provided as a form parameter."}
 var ErrorMessageNoPresentationSubmission = ErrorMessage{"no_presentation_submission_provided", "Authentication requires a presentation submission provided as a form parameter."}
-var ErrorMessageNoCallback = ErrorMessage{"NoCallbackProvided", "A callback address has to be provided as query-parameter."}
+var ErrorMessageNoCallback = ErrorMessage{"no_callback_provided", "A callback address has to be provided as query-parameter."}
 var ErrorMessageUnableToDecodeToken = ErrorMessage{"invalid_token", "Token could not be decoded."}
 var ErrorMessageUnableToDecodeCredential = ErrorMessage{"invalid_token", "Could not read the credential(s) inside the token."}
 var ErrorMessageUnableToDecodeHolder = ErrorMessage{"invalid_token", "Could not read the holder inside the token."}
@@ -48,6 +48,13 @@ func getApiVerifier() verifier.Verifier {
 		apiVerifier = verifier.GetVerifier()
 	}
 	return apiVerifier
+}
+
+func getConfiguration() *config.Configuration {
+	if configuration == nil {
+		configuration = verifier.GetConfiguration()
+	}
+	return configuration
 }
 
 // GetToken - Token endpoint to exchange the authorization code with the actual JWT.
@@ -255,8 +262,9 @@ func extractVpFromToken(c *gin.Context, vpToken string) (parsedPresentation *ver
 		return
 	}
 
+	// takes care of the verification
 	parsedPresentation, err = verifiable.ParsePresentation(tokenBytes,
-		presentationOptions...)
+		getPresentationOpts()...)
 	if err != nil {
 		logging.Log().Infof("Was not able to parse the token %s. Err: %v", vpToken, err)
 		c.AbortWithStatusJSON(400, ErrorMessageUnableToDecodeToken)
@@ -327,4 +335,21 @@ func VerifierAPIStartSIOP(c *gin.Context) {
 		return
 	}
 	c.String(http.StatusOK, connectionString)
+}
+
+func getPresentationOpts() []verifiable.PresentationOpt {
+	if len(presentationOptions) > 0 {
+		return presentationOptions
+	}
+
+	fingerprint := ""
+	if getConfiguration() == nil {
+		logging.Log().Warn("No configuration available.")
+	} else {
+		fingerprint = getConfiguration().Verifier.CertificateFingerprint
+	}
+
+	return []verifiable.PresentationOpt{
+		verifiable.WithPresProofChecker(verifier.NewDomeJWTProofChecker(fingerprint)),
+		verifiable.WithPresJSONLDDocumentLoader(ld.NewDefaultDocumentLoader(http.DefaultClient))}
 }
