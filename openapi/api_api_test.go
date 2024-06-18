@@ -93,11 +93,11 @@ func TestGetToken(t *testing.T) {
 	for _, tc := range tests {
 
 		t.Run(tc.testName, func(t *testing.T) {
-			presentationOptions = []verifiable.PresentationOpt{verifiable.WithPresDisabledProofCheck(), verifiable.WithDisabledJSONLDChecks()}
-
 			recorder := httptest.NewRecorder()
 			testContext, _ := gin.CreateTestContext(recorder)
+
 			apiVerifier = &mockVerifier{mockJWTString: tc.mockJWTString, mockExpiration: tc.mockExpiration, mockError: tc.mockError}
+			presentationOptions = []verifiable.PresentationOpt{verifiable.WithPresDisabledProofCheck(), verifiable.WithDisabledJSONLDChecks()}
 
 			formArray := []string{}
 
