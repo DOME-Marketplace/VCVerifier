@@ -18,7 +18,6 @@ import (
 
 	common "github.com/fiware/VCVerifier/common"
 	configModel "github.com/fiware/VCVerifier/config"
-	"github.com/fiware/VCVerifier/tir"
 	"github.com/trustbloc/vc-go/verifiable"
 
 	logging "github.com/fiware/VCVerifier/logging"
@@ -230,6 +229,8 @@ func InitVerifier(config *configModel.Configuration) (err error) {
 
 	clock := common.RealClock{}
 
+	//TODO: Reenable proper verification once dome is working
+	/**
 	var tokenProvider tir.TokenProvider
 	if (&config.M2M).AuthEnabled {
 		tokenProvider, err = tir.InitM2MTokenProvider(config, clock)
@@ -242,6 +243,7 @@ func InitVerifier(config *configModel.Configuration) (err error) {
 		logging.Log().Infof("Auth disabled.")
 	}
 
+
 	tirClient, err := tir.NewTirHttpClient(tokenProvider, config.M2M, config.Verifier)
 	if err != nil {
 		logging.Log().Errorf("Was not able to instantiate the trusted-issuers-registry client. Err: %v", err)
@@ -249,6 +251,9 @@ func InitVerifier(config *configModel.Configuration) (err error) {
 	}
 	trustedParticipantVerificationService := TrustedParticipantValidationService{tirClient: tirClient}
 	trustedIssuerVerificationService := TrustedIssuerValidationService{tirClient: tirClient}
+	*/
+	trustedParticipantVerificationService := DomeValidationService{}
+	trustedIssuerVerificationService := DomeValidationService{}
 
 	key, err := initPrivateKey(verifierConfig.KeyAlgorithm)
 
